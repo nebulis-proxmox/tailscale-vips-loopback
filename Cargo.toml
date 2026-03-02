@@ -29,6 +29,8 @@ libc = { version = "0.2.159", default-features = false }
 log = { version = "0.4.22", default-features = false }
 tokio = { version = "1.40.0", default-features = false }
 which = { version = "6.0.0", default-features = false }
+serde_json = { version = "1.0", default-features = false }
+dns-lookup = { version = "3.0.1", default-features = false }
 
 [profile.release.package.tailscale-vips-loopback-ebpf]
 debug = 2

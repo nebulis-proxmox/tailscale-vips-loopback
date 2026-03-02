@@ -6,7 +6,9 @@ edition.workspace = true
 license.workspace = true
 
 [dependencies]
-tailscale-vips-loopback-common = { path = "../tailscale-vips-loopback-common", features = ["user"] }
+tailscale-vips-loopback-common = { path = "../tailscale-vips-loopback-common", features = [
+    "user",
+] }
 
 anyhow = { workspace = true, default-features = true }
 aya = { workspace = true }
@@ -20,8 +22,12 @@ tokio = { workspace = true, features = [
     "rt-multi-thread",
     "net",
     "signal",
+    "process",
+    "time",
 ] }
 clap = { workspace = true, features = ["derive"] }
+serde_json = { workspace = true, features = ["std"] }
+dns-lookup = { workspace = true }
 [build-dependencies]
 anyhow = { workspace = true }
 aya-build = { workspace = true }
