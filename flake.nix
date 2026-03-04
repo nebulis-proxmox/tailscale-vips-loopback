@@ -46,7 +46,6 @@
           p:
           p.rust-bin.nightly."2025-12-05".default.override {
             extensions = [ "rust-src" ];
-            targets = if (crossTarget != null) then [ crossTarget ] else [ ];
           };
         rustToolchain = rustToolchainFor pkgs;
 
