@@ -93,7 +93,7 @@
             };
 
             CARGO_BUILD_TARGET = crossTarget;
-            CARGO_BUILD_RUSTFLAGS = thenOrNull (lib.strings.hasSuffix crossTarget "musl") "-C target-feature=+crt-static";
+            CARGO_BUILD_RUSTFLAGS = thenOrNull (crossTarget != null -> lib.strings.hasSuffix crossTarget "musl") "-C target-feature=+crt-static";
           };
 
         my-crate = pkgs.callPackage crateExpression { };
