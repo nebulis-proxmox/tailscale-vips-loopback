@@ -1,110 +1,49 @@
 {
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixpkgs-unstable";
-    crane.url = "github:ipetkov/crane";
-    flake-utils.url = "github:numtide/flake-utils";
-    rust-overlay = {
-      url = "github:oxalica/rust-overlay";
-      inputs.nixpkgs.follows = "nixpkgs";
+    systems.url = "github:nix-systems/default-linux";
+    flake-utils = {
+      url = "github:numtide/flake-utils";
+      inputs.systems.follows = "systems";
     };
   };
   outputs =
     {
       nixpkgs,
-      crane,
       flake-utils,
-      rust-overlay,
       ...
     }:
-    let
-      thenOrNull = condition: value: if condition then value else null;
-
-      overrideBuildTargets = {
-        "aarch64-darwin" = {
-          target = "aarch64-unknown-linux-musl";
-        };
-      };
-    in
     flake-utils.lib.eachDefaultSystem (
-      localSystem:
+      system:
       let
-        crossTarget =
-          thenOrNull (builtins.hasAttr localSystem overrideBuildTargets)
-            overrideBuildTargets.${localSystem}.target;
+        name = "tailscale-vips-loopback";
+        version = "0.1.0";
 
-        crossSystem = thenOrNull (crossTarget != null) {
-          config = crossTarget;
+        hashes = {
+          "x86_64-linux" = "04cd6d1271fa248b33cf12882cd3b8faa9b5e52dba32a04785ded4788251b78e";
+          "aarch64-linux" = "ca06617c259f0f1f55769bc38964a71e3015ea4d45f1588cc9aec9a81fa7d55e";
         };
-
-        pkgs = import nixpkgs {
-          inherit crossSystem localSystem;
-          overlays = [ (import rust-overlay) ];
-        };
-
-        # Correspond to rust 1.93.0 in the nightly channel as of 2024-06-05, which is the minimum version required to build aya 0.13.2
-        rustToolchainFor =
-          p:
-          p.rust-bin.nightly."2025-12-05".default.override {
-            extensions = [ "rust-src" ];
-          };
-        rustToolchain = rustToolchainFor pkgs;
-
-        craneLib = (crane.mkLib pkgs).overrideToolchain rustToolchainFor;
-
-        src = craneLib.cleanCargoSource ./.;
-
-        hasMuslTarget = crossTarget != null && nixpkgs.lib.strings.hasSuffix "musl" crossTarget;
-
-        crateExpression =
-          {
-            libiconv,
-            lib,
-            stdenv,
-          }:
-          craneLib.buildPackage {
-            inherit src;
-
-            pname = "tailscale-vips-loopback";
-            version = "0.1.0";
-            strictDeps = true;
-
-            # Dependencies which need to be build for the current platform
-            # on which we are doing the cross compilation. In this case,
-            # pkg-config needs to run on the build platform so that the build
-            # script can find the location of openssl. Note that we don't
-            # need to specify the rustToolchain here since it was already
-            # overridden above.
-            nativeBuildInputs = [
-              pkgs.bpf-linker
-            ]
-            ++ lib.optionals stdenv.buildPlatform.isDarwin [
-              libiconv
-            ];
-
-            # runtime dependencies
-            buildInputs = [
-            ];
-
-            cargoVendorDir = craneLib.vendorMultipleCargoDeps {
-              inherit (craneLib.findCargoFiles src) cargoConfigs;
-              cargoLockList = [
-                ./Cargo.lock
-                "${rustToolchain.passthru.availableComponents.rust-src}/lib/rustlib/src/rust/library/Cargo.lock"
-              ];
-            };
-
-            CARGO_BUILD_TARGET = crossTarget;
-            CARGO_BUILD_RUSTFLAGS = thenOrNull hasMuslTarget "-C target-feature=+crt-static";
-          };
-
-        my-crate = pkgs.callPackage crateExpression { };
       in
       {
-        checks = {
-          inherit my-crate;
-        };
+        packages.default = nixpkgs.stdenv.mkDerivation {
+          inherit version name;
 
-        packages.default = my-crate;
+          src = nixpkgs.fetchurl {
+            url = "https://github.com/nebulis-proxmox/tailscale-vips-loopback/releases/download/${version}/${name}-${system}";
+            sha256 = hashes.${system};
+          };
+
+          phases = [
+            "installPhase"
+            "patchPhase"
+          ];
+
+          installPhase = ''
+            mkdir -p $out/bin
+            cp $src $out/bin/${name}
+            chmod +x $out/bin/${name}
+          '';
+        };
       }
     );
 }
