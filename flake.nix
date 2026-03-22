@@ -9,16 +9,15 @@
   };
   outputs =
     {
+      self,
       nixpkgs,
       flake-utils,
       ...
     }:
-    let
-      pkgs = import nixpkgs { };
-    in
     flake-utils.lib.eachDefaultSystem (
       system:
       let
+        pkgs = nixpkgs.legacyPackages.${system};
         name = "tailscale-vips-loopback";
         version = "0.1.0";
 
