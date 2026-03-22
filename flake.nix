@@ -13,6 +13,9 @@
       flake-utils,
       ...
     }:
+    let
+      pkgs = import nixpkgs { };
+    in
     flake-utils.lib.eachDefaultSystem (
       system:
       let
@@ -25,10 +28,10 @@
         };
       in
       {
-        packages.default = nixpkgs.stdenv.mkDerivation {
+        packages.default = pkgs.stdenv.mkDerivation {
           inherit version name;
 
-          src = nixpkgs.fetchurl {
+          src = pkgs.fetchurl {
             url = "https://github.com/nebulis-proxmox/tailscale-vips-loopback/releases/download/${version}/${name}-${system}";
             sha256 = hashes.${system};
           };
